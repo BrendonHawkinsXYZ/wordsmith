@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from typing import Optional
 import os
 from openai import OpenAI
-import difflib
 
 app = FastAPI(title="Word Smith - LLM Prompt Testing Tool")
 
