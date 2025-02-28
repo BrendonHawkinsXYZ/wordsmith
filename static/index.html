@@ -22,7 +22,11 @@
             --white: #FFFFFF;
             --success: #10B981;
             --danger: #EF4444;
+            --azure-color: #0078D4;
+            --openai-color: #10A37F;
+            --anthropic-color: #9C27B0;
             --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --border-radius: 6px;
         }
         
         body {
@@ -144,7 +148,7 @@
         }
         
         /* Selects and inputs */
-        select, input[type="number"] {
+        select, input[type="number"], input[type="text"] {
             padding: 0.4rem 0.5rem;
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
@@ -168,10 +172,35 @@
             text-align: center;
         }
         
-        select:focus, input[type="number"]:focus {
+        input[type="text"] {
+            width: 10rem;
+        }
+        
+        select:focus, input[type="number"]:focus, input[type="text"]:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        /* Azure deployment settings */
+        .azure-settings {
+            display: none;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid var(--azure-color);
+            border-radius: var(--border-radius);
+            background-color: rgba(0, 120, 212, 0.05);
+        }
+        
+        .azure-settings.visible {
+            display: block;
+        }
+        
+        .azure-settings-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.5rem;
         }
         
         /* Output area */
@@ -348,9 +377,10 @@
                 
                 <div class="settings-row">
                     <div class="model-select">
-                        <select id="model1">
-                            <option value="gpt-4o">GPT-4o</option>
-                            <option value="claude">Claude</option>
+                        <select id="model1" class="model-selector">
+                            <option value="openai">OpenAI GPT-4o</option>
+                            <option value="azure">Azure OpenAI</option>
+                            <option value="anthropic">Claude</option>
                         </select>
                     </div>
                     
@@ -365,6 +395,14 @@
                     </div>
                 </div>
                 
+                <!-- Azure-specific settings for model 1 -->
+                <div id="azure-settings1" class="azure-settings">
+                    <div class="azure-settings-row">
+                        <span class="control-label">Deployment Name:</span>
+                        <input type="text" id="azure-deployment1" placeholder="e.g., gpt-4o" value="gpt-4o">
+                    </div>
+                </div>
+                
                 <textarea id="prompt1" placeholder="Enter prompt 1..."></textarea>
                 
                 <div id="output1" class="output-area"></div>
@@ -376,9 +414,10 @@
                 
                 <div class="settings-row">
                     <div class="model-select">
-                        <select id="model2">
-                            <option value="gpt-4o">GPT-4o</option>
-                            <option value="claude">Claude</option>
+                        <select id="model2" class="model-selector">
+                            <option value="openai">OpenAI GPT-4o</option>
+                            <option value="azure">Azure OpenAI</option>
+                            <option value="anthropic">Claude</option>
                         </select>
                     </div>
                     
@@ -390,6 +429,14 @@
                     <div class="topp-control">
                         <span class="control-label">Top P:</span>
                         <input type="number" id="topp2" min="0" max="1" step="0.1" value="1.0">
+                    </div>
+                </div>
+                
+                <!-- Azure-specific settings for model 2 -->
+                <div id="azure-settings2" class="azure-settings">
+                    <div class="azure-settings-row">
+                        <span class="control-label">Deployment Name:</span>
+                        <input type="text" id="azure-deployment2" placeholder="e.g., gpt-4" value="gpt-4">
                     </div>
                 </div>
                 
@@ -440,10 +487,23 @@
             const model1El = document.getElementById('model1');
             const temp1El = document.getElementById('temp1');
             const topp1El = document.getElementById('topp1');
+            const azureSettings1El = document.getElementById('azure-settings1');
+            const azureDeployment1El = document.getElementById('azure-deployment1');
             
             const model2El = document.getElementById('model2');
             const temp2El = document.getElementById('temp2');
             const topp2El = document.getElementById('topp2');
+            const azureSettings2El = document.getElementById('azure-settings2');
+            const azureDeployment2El = document.getElementById('azure-deployment2');
+            
+            // Show/hide Azure settings based on model selection
+            model1El.addEventListener('change', function() {
+                azureSettings1El.classList.toggle('visible', this.value === 'azure');
+            });
+            
+            model2El.addEventListener('change', function() {
+                azureSettings2El.classList.toggle('visible', this.value === 'azure');
+            });
             
             // Function to highlight differences between two texts
             function highlightDifferences(text1, text2) {
@@ -493,12 +553,22 @@
                         max_tokens: 1000 // Default value
                     };
                     
+                    // Add Azure-specific settings if Azure is selected
+                    if (model1El.value === 'azure') {
+                        settings1.deployment_name = azureDeployment1El.value;
+                    }
+                    
                     const settings2 = {
                         model: model2El.value,
                         temperature: parseFloat(temp2El.value),
                         top_p: parseFloat(topp2El.value),
                         max_tokens: 1000 // Default value
                     };
+                    
+                    // Add Azure-specific settings if Azure is selected
+                    if (model2El.value === 'azure') {
+                        settings2.deployment_name = azureDeployment2El.value;
+                    }
                     
                     // Validate inputs
                     if (!prompt1 || !prompt2) {
@@ -557,16 +627,28 @@
                 // Reset to default values
                 temp1El.value = 0.7;
                 topp1El.value = 1.0;
-                model1El.value = 'gpt-4o';
+                model1El.value = 'openai';
+                azureSettings1El.classList.remove('visible');
+                azureDeployment1El.value = 'gpt-4o';
                 
                 temp2El.value = 0.7;
                 topp2El.value = 1.0;
-                model2El.value = 'gpt-4o';
+                model2El.value = 'openai';
+                azureSettings2El.classList.remove('visible');
+                azureDeployment2El.value = 'gpt-4o';
             });
             
             // Help button event listener
             helpBtn.addEventListener('click', function() {
-                alert('Word Smith Help\n\n1. Enter your global input text that will be used with both prompts.\n2. Configure model settings for each prompt.\n3. Enter your two different prompts.\n4. Click "Run Comparison" to see the outputs.\n5. Differences between outputs will be highlighted in red.\n6. Use "Save" to export the results as a PDF.');
+                alert('Word Smith Help\n\n' +
+                     '1. Enter your global input text that will be used with both prompts.\n' +
+                     '2. Configure model settings for each prompt (OpenAI, Azure OpenAI, or Claude).\n' +
+                     '3. If using Azure OpenAI, enter your deployment name.\n' +
+                     '4. Enter your two different prompts.\n' +
+                     '5. Click "Run Comparison" to see the outputs.\n' +
+                     '6. Differences between outputs will be highlighted in red.\n' +
+                     '7. Use "Save" to export the results as a PDF.\n\n' +
+                     'Note: Make sure your environment has the required API keys set up for the models you want to use.');
             });
             
             // Save button event listener
@@ -599,8 +681,17 @@
                 doc.text('PROMPT 1 SETTINGS:', 72, yPos);
                 doc.setFontSize(10);
                 yPos += 20;
-                doc.text(`Model: ${model1El.options[model1El.selectedIndex].text}`, 72, yPos);
+                
+                const model1Text = model1El.options[model1El.selectedIndex].text;
+                doc.text(`Model: ${model1Text}`, 72, yPos);
                 yPos += 15;
+                
+                // Add Azure deployment name if applicable
+                if (model1El.value === 'azure') {
+                    doc.text(`Azure Deployment: ${azureDeployment1El.value}`, 72, yPos);
+                    yPos += 15;
+                }
+                
                 doc.text(`Temperature: ${temp1El.value}`, 72, yPos);
                 yPos += 15;
                 doc.text(`Top-p: ${topp1El.value}`, 72, yPos);
@@ -610,8 +701,17 @@
                 doc.text('PROMPT 2 SETTINGS:', 72, yPos);
                 doc.setFontSize(10);
                 yPos += 20;
-                doc.text(`Model: ${model2El.options[model2El.selectedIndex].text}`, 72, yPos);
+                
+                const model2Text = model2El.options[model2El.selectedIndex].text;
+                doc.text(`Model: ${model2Text}`, 72, yPos);
                 yPos += 15;
+                
+                // Add Azure deployment name if applicable
+                if (model2El.value === 'azure') {
+                    doc.text(`Azure Deployment: ${azureDeployment2El.value}`, 72, yPos);
+                    yPos += 15;
+                }
+                
                 doc.text(`Temperature: ${temp2El.value}`, 72, yPos);
                 yPos += 15;
                 doc.text(`Top-p: ${topp2El.value}`, 72, yPos);
