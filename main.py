@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import os
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 import anthropic
 
 app = FastAPI(title="Word Smith - LLM Prompt Testing Tool")
@@ -40,6 +40,13 @@ class PromptRequest(BaseModel):
 # Initialize OpenAI client - API key should be set in environment variable OPENAI_API_KEY
 client_openai = OpenAI()
 
+# Initialize Azure OpenAI client - API key, endpoint, and other settings should be set in environment variables
+client_azure = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2023-05-15"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+)
+
 # Initialize Anthropic client - API key should be set in environment variable ANTHROPIC_API_KEY
 client_anthropic = anthropic.Anthropic()
 
@@ -56,6 +63,23 @@ def get_openai_completion(prompt_text, settings):
         return completion.choices[0].message.content
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+
+# Function to get completion from Azure OpenAI
+def get_azure_openai_completion(prompt_text, settings):
+    try:
+        # Get the deployment name from settings or use a default
+        deployment_name = settings.get("deployment_name", "gpt-4")
+        
+        completion = client_azure.chat.completions.create(
+            model=deployment_name,  # This is the deployment name in Azure
+            messages=[{"role": "user", "content": prompt_text}],
+            temperature=settings.get("temperature", 0.7),
+            top_p=settings.get("top_p", 1.0),
+            max_tokens=settings.get("max_tokens", 1000)
+        )
+        return completion.choices[0].message.content
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Azure OpenAI API error: {str(e)}")
 
 # Function to get completion from Anthropic
 def get_anthropic_completion(prompt_text, settings):
@@ -79,6 +103,8 @@ def get_completion(prompt_text, settings):
     
     if model == "openai":
         return get_openai_completion(prompt_text, settings)
+    elif model == "azure":
+        return get_azure_openai_completion(prompt_text, settings)
     elif model == "anthropic":
         return get_anthropic_completion(prompt_text, settings)
     else:
