@@ -1,0 +1,55 @@
+function doPost(e) {
+  try {
+    // Get the active spreadsheet
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    // Prepare the row to add using the form parameters
+    const row = [
+      new Date(), // Current timestamp
+      e.parameter.globalInput || '',
+      e.parameter.model1 || '',
+      e.parameter.temperature1 || '',
+      e.parameter.topP1 || '',
+      e.parameter.azureDeployment1 || 'N/A',
+      e.parameter.prompt1 || '',
+      e.parameter.output1 || '',
+      e.parameter.model2 || '',
+      e.parameter.temperature2 || '',
+      e.parameter.topP2 || '',
+      e.parameter.azureDeployment2 || 'N/A',
+      e.parameter.prompt2 || '',
+      e.parameter.output2 || ''
+    ];
+    
+    // Append the row to the spreadsheet
+    sheet.appendRow(row);
+    
+    // Return a success response
+    return HtmlService.createHtmlOutput(
+      '<html><body>' +
+      '<h2>Success!</h2>' +
+      '<p>Your data has been saved to Google Sheets.</p>' +
+      '<script>window.setTimeout(function() { window.close(); }, 3000);</script>' +
+      '</body></html>'
+    );
+  } catch (error) {
+    // Log the error and return an error response
+    console.error('Error saving data:', error);
+    return HtmlService.createHtmlOutput(
+      '<html><body>' +
+      '<h2>Error</h2>' +
+      '<p>Failed to save data: ' + error.message + '</p>' +
+      '</body></html>'
+    );
+  }
+}
+
+// Also include a doGet function to handle direct visits to the script URL
+function doGet() {
+  return HtmlService.createHtmlOutput(
+    '<html><body>' +
+    '<h2>Word Smith Data Service</h2>' +
+    '<p>This is a web service for the Word Smith application.</p>' +
+    '</body></html>'
+  );
+}
