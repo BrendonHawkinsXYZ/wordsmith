@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Smith - LLM Prompt Testing Tool</title>
+    <title>Word Smith</title>
     <style>
         /* Reset and base styles */
         * {
@@ -14,9 +14,9 @@
         }
         
         :root {
-            --primary-color: #6366F1;
+            --primary-color: #262627;
             --secondary-color: #F3F4F6;
-            --border-color: #E5E7EB;
+            --border-color: #262627;
             --text-color: #111827;
             --text-secondary: #6B7280;
             --white: #FFFFFF;
@@ -26,7 +26,6 @@
             --openai-color: #10A37F;
             --anthropic-color: #9C27B0;
             --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --border-radius: 6px;
         }
         
         body {
@@ -69,6 +68,21 @@
             gap: 1rem;
             align-items: center;
         }
+
+        #product-select {
+        padding: 0.625rem 0.5rem;
+        -webkit-appearance: none;
+        appearance: none;
+        -moz-appearance: none;
+        }
+
+        .product-select {
+        margin-right: 1rem;
+        }
+
+        .product-select {
+        margin-right: 1rem;
+        }
         
         /* Main container styles */
         .container {
@@ -93,13 +107,14 @@
         
         textarea {
             width: 100%;
-            min-height: 120px;
+            height: 120px;
             padding: 0.75rem;
             border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
+            border-radius: var(--border-color);
             background-color: var(--white);
             font-size: 0.9rem;
-            resize: vertical;
+            resize: none;
+            overflow: auto;
             color: var(--text-color);
             transition: border-color 0.2s ease;
         }
@@ -161,6 +176,8 @@
             cursor: pointer;
             padding-right: 2rem;
             appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.5rem center;
@@ -220,7 +237,7 @@
         /* Button styles */
         .buttons-container {
             display: flex;
-            justify-content: center;
+            justify-content: left;
             gap: 1rem;
             margin-top: 1rem;
         }
@@ -399,7 +416,7 @@
                 <div id="azure-settings1" class="azure-settings">
                     <div class="azure-settings-row">
                         <span class="control-label">Deployment Name:</span>
-                        <input type="text" id="azure-deployment1" placeholder="e.g., gpt-4o" value="gpt-4o">
+                        <input type="text" id="azure-deployment1" placeholder="e.g., gpt-4" value="gpt-4">
                     </div>
                 </div>
                 
@@ -496,6 +513,51 @@
             const azureSettings2El = document.getElementById('azure-settings2');
             const azureDeployment2El = document.getElementById('azure-deployment2');
             
+            // For global input
+            globalInputEl.setAttribute('maxlength', '4096');
+
+            // For prompt1
+            prompt1El.setAttribute('maxlength', '4096');
+
+            // For prompt2
+            prompt2El.setAttribute('maxlength', '4096');
+
+            function setupCharacterLimit(textareaEl, limit) {
+                // Create character counter element
+                const counterEl = document.createElement('div');
+                counterEl.className = 'char-counter';
+                counterEl.style.textAlign = 'right';
+                counterEl.style.fontSize = '0.8rem';
+                counterEl.style.color = 'var(--text-secondary)';
+                
+                // Insert counter after the textarea
+                textareaEl.parentNode.insertBefore(counterEl, textareaEl.nextSibling);
+                
+                // Update the counter initially
+                updateCounter(textareaEl, counterEl, limit);
+                
+                // Add event listener for input changes
+                textareaEl.addEventListener('input', function() {
+                    updateCounter(this, counterEl, limit);
+                });
+            }
+
+            function updateCounter(textareaEl, counterEl, limit) {
+                const remaining = limit - textareaEl.value.length;
+                counterEl.textContent = `${textareaEl.value.length}/${limit} characters`;
+                
+                // Change color when approaching the limit
+                if (remaining < 100) {
+                    counterEl.style.color = 'var(--danger)';
+                } else {
+                    counterEl.style.color = 'var(--text-secondary)';
+                }
+            }
+
+            // Setup character limits for all textareas
+            setupCharacterLimit(globalInputEl, 4096);
+            setupCharacterLimit(prompt1El, 4096);
+            setupCharacterLimit(prompt2El, 4096);
             // Show/hide Azure settings based on model selection
             model1El.addEventListener('change', function() {
                 azureSettings1El.classList.toggle('visible', this.value === 'azure');
@@ -504,6 +566,7 @@
             model2El.addEventListener('change', function() {
                 azureSettings2El.classList.toggle('visible', this.value === 'azure');
             });
+            
             
             // Function to highlight differences between two texts
             function highlightDifferences(text1, text2) {
@@ -629,157 +692,82 @@
                 topp1El.value = 1.0;
                 model1El.value = 'openai';
                 azureSettings1El.classList.remove('visible');
-                azureDeployment1El.value = 'gpt-4o';
+                azureDeployment1El.value = 'gpt-4';
                 
                 temp2El.value = 0.7;
                 topp2El.value = 1.0;
                 model2El.value = 'openai';
                 azureSettings2El.classList.remove('visible');
-                azureDeployment2El.value = 'gpt-4o';
+                azureDeployment2El.value = 'gpt-4';
             });
             
             // Help button event listener
             helpBtn.addEventListener('click', function() {
                 alert('Word Smith Help\n\n' +
-                     '1. Enter your global input text that will be used with both prompts.\n' +
-                     '2. Configure model settings for each prompt (OpenAI, Azure OpenAI, or Claude).\n' +
-                     '3. If using Azure OpenAI, enter your deployment name.\n' +
-                     '4. Enter your two different prompts.\n' +
-                     '5. Click "Run Comparison" to see the outputs.\n' +
-                     '6. Differences between outputs will be highlighted in red.\n' +
-                     '7. Use "Save" to export the results as a PDF.\n\n' +
-                     'Note: Make sure your environment has the required API keys set up for the models you want to use.');
+                    '1. Enter your global input text that will be used with both prompts.\n' +
+                    '2. Configure model settings for each prompt (OpenAI, Azure OpenAI, or Claude).\n' +
+                    '3. If using Azure OpenAI, enter your deployment name.\n' +
+                    '4. Enter your two different prompts.\n' +
+                    '5. Click "Run Comparison" to see the outputs.\n' +
+                    '6. Differences between outputs will be highlighted in color.\n' +
+                    '7. Select a product from the dropdown before saving.\n' +
+                    '8. Click "Save" to export results to the Google Sheet for the selected product.\n\n' +
+                    'Note: Make sure your environment has the required API keys set up for the models you want to use.');
             });
             
-            // Save button event listener
             saveBtn.addEventListener('click', function() {
-                // Make sure we have outputs to save
-                if (!output1El.innerHTML && !output2El.innerHTML) {
-                    alert('Please run a comparison to generate outputs before saving.');
-                    return;
-                }
-                
-                // Initialize jsPDF
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('p', 'pt', 'letter');
-                
-                // Set up document properties
-                doc.setFontSize(18);
-                doc.text('Word Smith - Prompt Testing Results', 72, 40);
-                
-                // Add global input
-                let yPos = 80;
-                doc.setFontSize(14);
-                doc.text('GLOBAL INPUT:', 72, yPos);
-                doc.setFontSize(10);
-                const globalInputLines = doc.splitTextToSize(globalInputEl.value, 450);
-                doc.text(globalInputLines, 72, yPos + 20);
-                
-                // Add settings for both prompts
-                yPos = yPos + 20 + (globalInputLines.length * 12);
-                doc.setFontSize(14);
-                doc.text('PROMPT 1 SETTINGS:', 72, yPos);
-                doc.setFontSize(10);
-                yPos += 20;
-                
-                const model1Text = model1El.options[model1El.selectedIndex].text;
-                doc.text(`Model: ${model1Text}`, 72, yPos);
-                yPos += 15;
-                
-                // Add Azure deployment name if applicable
-                if (model1El.value === 'azure') {
-                    doc.text(`Azure Deployment: ${azureDeployment1El.value}`, 72, yPos);
-                    yPos += 15;
-                }
-                
-                doc.text(`Temperature: ${temp1El.value}`, 72, yPos);
-                yPos += 15;
-                doc.text(`Top-p: ${topp1El.value}`, 72, yPos);
-                
-                yPos += 30;
-                doc.setFontSize(14);
-                doc.text('PROMPT 2 SETTINGS:', 72, yPos);
-                doc.setFontSize(10);
-                yPos += 20;
-                
-                const model2Text = model2El.options[model2El.selectedIndex].text;
-                doc.text(`Model: ${model2Text}`, 72, yPos);
-                yPos += 15;
-                
-                // Add Azure deployment name if applicable
-                if (model2El.value === 'azure') {
-                    doc.text(`Azure Deployment: ${azureDeployment2El.value}`, 72, yPos);
-                    yPos += 15;
-                }
-                
-                doc.text(`Temperature: ${temp2El.value}`, 72, yPos);
-                yPos += 15;
-                doc.text(`Top-p: ${topp2El.value}`, 72, yPos);
-                
-                // Add prompts
-                yPos += 30;
-                doc.setFontSize(14);
-                doc.text('PROMPT 1:', 72, yPos);
-                doc.setFontSize(10);
-                const prompt1Lines = doc.splitTextToSize(prompt1El.value, 450);
-                doc.text(prompt1Lines, 72, yPos + 20);
-                
-                yPos = yPos + 20 + (prompt1Lines.length * 12);
-                if (yPos > 700) {
-                    doc.addPage();
-                    yPos = 40;
-                }
-                
-                doc.setFontSize(14);
-                doc.text('PROMPT 2:', 72, yPos);
-                doc.setFontSize(10);
-                const prompt2Lines = doc.splitTextToSize(prompt2El.value, 450);
-                doc.text(prompt2Lines, 72, yPos + 20);
-                
-                // Check if we need to add a new page
-                yPos = yPos + 20 + (prompt2Lines.length * 12);
-                if (yPos > 700) {
-                    doc.addPage();
-                    yPos = 40;
-                }
-                
-                // Add outputs
-                doc.setFontSize(14);
-                doc.text('OUTPUT 1:', 72, yPos);
-                doc.setFontSize(10);
-                // Get text content without HTML tags
-                const output1Text = output1El.innerText || output1El.textContent;
-                const output1Lines = doc.splitTextToSize(output1Text, 450);
-                doc.text(output1Lines, 72, yPos + 20);
-                
-                yPos = yPos + 20 + (output1Lines.length * 12);
-                if (yPos > 700) {
-                    doc.addPage();
-                    yPos = 40;
-                }
-                
-                doc.setFontSize(14);
-                doc.text('OUTPUT 2:', 72, yPos);
-                doc.setFontSize(10);
-                const output2Text = output2El.innerText || output2El.textContent;
-                const output2Lines = doc.splitTextToSize(output2Text, 450);
-                doc.text(output2Lines, 72, yPos + 20);
-                
-                // Add a note about comparison
-                yPos = yPos + 20 + (output2Lines.length * 12);
-                if (yPos > 700) {
-                    doc.addPage();
-                    yPos = 40;
-                }
-                
-                doc.setFontSize(14);
-                doc.text('COMPARISON NOTE:', 72, yPos);
-                doc.setFontSize(10);
-                doc.text('Differences between outputs are highlighted in red in the application.', 72, yPos + 20);
-                
-                // Save the PDF
-                doc.save('word-smith-results.pdf');
-            });
+    // Make sure we have outputs to save
+    if (!output1El.innerHTML && !output2El.innerHTML) {
+        alert('Please run a comparison to generate outputs before saving.');
+        return;
+    }
+    
+    // Create an invisible iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    
+    // Create a form inside the iframe
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'GOOGLE URL HERE';
+    
+    // Add fields with your data
+    const addField = (name, value) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value || '';
+        form.appendChild(input);
+    };
+    
+    // Add all data fields
+    addField('globalInput', globalInputEl.value);
+    addField('model1', model1El.value);
+    addField('temperature1', temp1El.value);
+    addField('topP1', topp1El.value);
+    addField('azureDeployment1', model1El.value === 'azure' ? azureDeployment1El.value : 'N/A');
+    addField('prompt1', prompt1El.value);
+    addField('output1', output1El.innerText || output1El.textContent);
+    addField('model2', model2El.value);
+    addField('temperature2', temp2El.value);
+    addField('topP2', topp2El.value);
+    addField('azureDeployment2', model2El.value === 'azure' ? azureDeployment2El.value : 'N/A');
+    addField('prompt2', prompt2El.value);
+    addField('output2', output2El.innerText || output2El.textContent);
+    
+    // Add the form to the iframe and submit it
+    iframe.contentDocument.body.appendChild(form);
+    form.submit();
+    
+    // Show success message
+    alert('Data sent to Google Sheets!');
+    
+    // Clean up the iframe after a delay
+    setTimeout(() => {
+        document.body.removeChild(iframe);
+    }, 5000);
+});
         });
     </script>
 </body>
